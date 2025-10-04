@@ -3,6 +3,7 @@ package com.reliaquest.api.service;
 import static com.reliaquest.api.utils.StringUtils.containsString;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.reliaquest.api.controller.request.EmployeeCreationInput;
 import com.reliaquest.api.model.Employee;
 import java.util.Comparator;
 import java.util.List;
@@ -58,5 +59,11 @@ public class EmployeeService {
                 .limit(limit)
                 .map(Employee::getName)
                 .toList();
+    }
+
+    public Employee createEmployee(EmployeeCreationInput input) {
+        return employeeApiClient
+                .post("/api/v1/employee", input, employeeTypeReference)
+                .join();
     }
 }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.reliaquest.api.controller.request.EmployeeCreationInput;
 import com.reliaquest.api.exception.APIException;
 import com.reliaquest.api.model.Employee;
 import java.util.List;
@@ -103,17 +104,41 @@ class EmployeeServiceTest {
     @Test
     void shouldReturnTopKEmployeesBySalary() {
         Integer k = 2;
-        when(employeeApiClient.get(any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(mockEmployeeList));
+        when(employeeApiClient.get(any(), any())).thenReturn(CompletableFuture.completedFuture(mockEmployeeList));
 
         List<String> receivedEmployees = employeeService.getTopEmployeesBySalary(k);
 
         assertEquals(2, receivedEmployees.size());
         assertEquals("Diana Prince", receivedEmployees.get(0)); // highest salary
-        assertEquals("Bob Johnson", receivedEmployees.get(1));  // second highest salary
+        assertEquals("Bob Johnson", receivedEmployees.get(1)); // second highest salary
 
         verify(employeeApiClient, times(1)).get(argumentCaptor.capture(), any());
         assertEquals(EMPLOYEE_SERVER_API_PATH, argumentCaptor.getValue());
     }
 
+    @Test
+    void shouldCreateEmployeeWithGivenInput() {
+        EmployeeCreationInput input =
+                new EmployeeCreationInput("Alice Johnson", 1800, 28, "Backend Developer", "alice.johnson@example.com");
+
+        Employee mockCreatedEmployee = Employee.newEmployee(input);
+
+        when(employeeApiClient.post(any(), any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(mockCreatedEmployee));
+
+        Employee createdEmployee = employeeService.createEmployee(input);
+
+        ArgumentCaptor<EmployeeCreationInput> inputCaptor = ArgumentCaptor.forClass(EmployeeCreationInput.class);
+
+        verify(employeeApiClient, times(1)).post(argumentCaptor.capture(), inputCaptor.capture(), any());
+
+        assertEquals(EMPLOYEE_SERVER_API_PATH, argumentCaptor.getValue());
+        assertEquals(input, inputCaptor.getValue());
+
+        assertEquals(mockCreatedEmployee.getName(), createdEmployee.getName());
+        assertEquals(mockCreatedEmployee.getAge(), createdEmployee.getAge());
+        assertEquals(mockCreatedEmployee.getEmail(), createdEmployee.getEmail());
+        assertEquals(mockCreatedEmployee.getTitle(), createdEmployee.getTitle());
+        assertEquals(mockCreatedEmployee.getSalary(), createdEmployee.getSalary());
+    }
 }

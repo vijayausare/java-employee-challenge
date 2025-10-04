@@ -1,6 +1,7 @@
 package com.reliaquest.api.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.reliaquest.api.controller.request.EmployeeCreationInput;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,4 +28,9 @@ public class Employee {
 
     @JsonAlias("employee_email")
     private String email;
+
+    public static Employee newEmployee(EmployeeCreationInput request) {
+        return new Employee(
+                UUID.randomUUID(), request.name(), request.salary(), request.age(), request.title(), request.email());
+    }
 }
