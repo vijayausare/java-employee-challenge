@@ -4,6 +4,7 @@ import static com.reliaquest.api.utils.StringUtils.containsString;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.reliaquest.api.model.Employee;
+import java.util.Comparator;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -46,5 +47,16 @@ public class EmployeeService {
         return employeeApiClient
                 .get("/api/v1/employee/" + id, employeeTypeReference)
                 .join();
+    }
+
+    public List<String> getTopEmployeesBySalary(Integer limit) {
+        List<Employee> allEmployees = getAllEmployees();
+        log.debug("Returning top {} earning employees out of {} employees", limit, allEmployees.size());
+
+        return allEmployees.stream()
+                .sorted(Comparator.comparing(Employee::getSalary).reversed())
+                .limit(limit)
+                .map(Employee::getName)
+                .toList();
     }
 }

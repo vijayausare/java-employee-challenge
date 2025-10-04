@@ -80,8 +80,8 @@ class EmployeeServiceTest {
     @Test
     void itShouldReturnEmployeeByGivenId() {
         String id = "123e4567-e89b-12d3-a456-426614174000";
-        Employee mockEmployee =
-                new Employee(UUID.randomUUID(), "Alice Johnson", 1800, 28, "Backend Developer", "alice.johnson@example.com");
+        Employee mockEmployee = new Employee(
+                UUID.randomUUID(), "Alice Johnson", 1800, 28, "Backend Developer", "alice.johnson@example.com");
 
         when(employeeApiClient.get(any(), any())).thenReturn(CompletableFuture.completedFuture(mockEmployee));
 
@@ -99,4 +99,21 @@ class EmployeeServiceTest {
 
         assertThrows(APIException.class, () -> employeeService.getEmployeeById(id));
     }
+
+    @Test
+    void shouldReturnTopKEmployeesBySalary() {
+        Integer k = 2;
+        when(employeeApiClient.get(any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(mockEmployeeList));
+
+        List<String> receivedEmployees = employeeService.getTopEmployeesBySalary(k);
+
+        assertEquals(2, receivedEmployees.size());
+        assertEquals("Diana Prince", receivedEmployees.get(0)); // highest salary
+        assertEquals("Bob Johnson", receivedEmployees.get(1));  // second highest salary
+
+        verify(employeeApiClient, times(1)).get(argumentCaptor.capture(), any());
+        assertEquals(EMPLOYEE_SERVER_API_PATH, argumentCaptor.getValue());
+    }
+
 }
