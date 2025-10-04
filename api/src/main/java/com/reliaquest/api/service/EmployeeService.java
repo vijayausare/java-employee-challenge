@@ -1,5 +1,7 @@
 package com.reliaquest.api.service;
 
+import static com.reliaquest.api.utils.StringUtils.containsString;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.reliaquest.api.model.Employee;
 import java.util.List;
@@ -20,5 +22,13 @@ public class EmployeeService {
         return employeeApiClient
                 .get("/api/v1/employee", employeeListTypeReference)
                 .join();
+    }
+
+    public List<Employee> getEmployeesByNameSearch(String searchString) {
+        List<Employee> employees = getAllEmployees();
+        log.debug("Searching for input string: {} in {} employees", searchString, employees.size());
+        return employees.stream()
+                .filter(e -> containsString(e.getName(), searchString))
+                .toList();
     }
 }

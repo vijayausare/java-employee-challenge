@@ -52,4 +52,16 @@ class EmployeeServiceTest {
         verify(employeeApiClient, times(1)).get(argumentCaptor.capture(), any());
         assertEquals(EMPLOYEE_SERVER_API_PATH, argumentCaptor.getValue());
     }
+
+    @Test
+    void shouldReturnEmployeesWhenNameContainsSearchString() {
+        String searchString = "Al";
+        when(employeeApiClient.get(any(), any())).thenReturn(CompletableFuture.completedFuture(mockEmployeeList));
+
+        List<Employee> receivedEmployees = employeeService.getEmployeesByNameSearch(searchString);
+
+        assertEquals(2, receivedEmployees.size());
+        verify(employeeApiClient, times(1)).get(argumentCaptor.capture(), any());
+        assertEquals(EMPLOYEE_SERVER_API_PATH, argumentCaptor.getValue());
+    }
 }
