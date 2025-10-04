@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.reliaquest.api.controller.request.DeleteEmployeeInput;
+import com.reliaquest.api.controller.request.EmployeeCreationInput;
 import com.reliaquest.api.model.Employee;
 import java.util.List;
 import java.util.UUID;
@@ -67,6 +68,86 @@ class EmployeeControllerTest {
                 .andExpect(jsonPath("$.age").value(mockEmployee.getAge()))
                 .andExpect(jsonPath("$.salary").value(mockEmployee.getSalary()))
                 .andExpect(jsonPath("$.title").value(mockEmployee.getTitle()));
+    }
+
+    @Test
+    void shouldReturnErrorWhileGettingEmployeeByIdWhenEmployeeDoesNotExist() throws Exception {
+        Employee mockEmployee = mockEmployeeList.get(0);
+        employeeServerMocks.mockGetApiCall(
+                "/api/v1/employee/" + mockEmployee.getId(), 404, "Employee not found with ID " + mockEmployee.getId());
+
+        mockMvc.perform(get("/" + mockEmployee.getId()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$").value("Employee not found with ID " + mockEmployee.getId()));
+    }
+
+    @Test
+    void itShouldSearchEmployeeByName() throws Exception {
+        employeeServerMocks.mockGetApiCall(
+                "/api/v1/employee", 200, getEnclosedResponse(objectMapper.writeValueAsString(mockEmployeeList)));
+
+        mockMvc.perform(get("/search/Li"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$.[0].name").value("Alice Smith"))
+                .andExpect(jsonPath("$.[1].name").value("Charlie Brown"));
+    }
+
+    @Test
+    void shouldReturnHighestSalaryOfEmployee() throws Exception {
+        employeeServerMocks.mockGetApiCall(
+                "/api/v1/employee", 200, getEnclosedResponse(objectMapper.writeValueAsString(mockEmployeeList)));
+
+        mockMvc.perform(get("/highestSalary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(3000));
+    }
+
+    @Test
+    void shouldReturnNamesOfTop10EarningEmployees() throws Exception {
+        employeeServerMocks.mockGetApiCall(
+                "/api/v1/employee", 200, getEnclosedResponse(objectMapper.writeValueAsString(mockEmployeeList)));
+
+        mockMvc.perform(get("/topTenHighestEarningEmployeeNames"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(7)));
+    }
+
+    @Test
+    void shouldCreateEmployee() throws Exception {
+        EmployeeCreationInput employeeCreationInput =
+                new EmployeeCreationInput("John Clair", 1000, 30, "CTO", "john@rq.com");
+
+        String createEmployeeResponse =
+                """
+      {
+        "data": {
+          "id": "4a3a170b-22cd-4ac2-aad1-9bb5b34a1507",
+          "employee_name": "John Clair",
+          "employee_salary": 1000,
+          "employee_age": 30,
+          "employee_title": "CTO",
+          "employee_email": "john@rq.com"
+        },
+        "status": "Successfully processed request."
+      }
+      """;
+
+        employeeServerMocks.mockPostApiCall(
+                "/api/v1/employee",
+                200,
+                objectMapper.writeValueAsString(employeeCreationInput),
+                createEmployeeResponse);
+
+        mockMvc.perform(post("/")
+                        .content(objectMapper.writeValueAsString(employeeCreationInput))
+                        .contentType("application/json"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("4a3a170b-22cd-4ac2-aad1-9bb5b34a1507"))
+                .andExpect(jsonPath("$.name").value("John Clair"))
+                .andExpect(jsonPath("$.age").value(30))
+                .andExpect(jsonPath("$.salary").value(1000))
+                .andExpect(jsonPath("$.title").value("CTO"));
     }
 
     @Test
