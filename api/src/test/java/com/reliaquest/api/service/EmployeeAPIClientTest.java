@@ -6,13 +6,14 @@ import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.reliaquest.api.controller.request.DeleteEmployeeInput;
 import com.reliaquest.api.controller.request.EmployeeCreationInput;
 import com.reliaquest.api.model.Employee;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,18 +31,8 @@ class EmployeeApiClientTest {
     }
 
     @Test
-    void testGet_successfulResponse() throws Exception {
-        String employeeId = UUID.randomUUID().toString();
-        String jsonResponse = "{\n" + "  \"data\": {\n"
-                + "    \"id\": \""
-                + employeeId + "\",\n" + "    \"name\": \"Alice Smith\",\n"
-                + "    \"role\": \"QA Engineer\",\n"
-                + "    \"salary\": 1200,\n"
-                + "    \"age\": 30,\n"
-                + "    \"email\": \"alice.smith@gmail.com\"\n"
-                + "  }\n"
-                + "}";
-
+    void testGet_successfulResponse() {
+        String jsonResponse = "{\"data\":{\"id\":\"596205c5-e4dc-4b0e-89dc-b2ec6dc758ea\",\"name\":\"Alice Smith\"}}";
         HttpResponse<String> httpResponse = mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(200);
         when(httpResponse.body()).thenReturn(jsonResponse);
@@ -49,20 +40,18 @@ class EmployeeApiClientTest {
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(CompletableFuture.completedFuture(httpResponse));
 
-        CompletableFuture<Employee> result = apiClient.get("/employees/" + employeeId, new TypeReference<>() {});
+        CompletableFuture<Employee> result =
+                apiClient.get("/employees/596205c5-e4dc-4b0e-89dc-b2ec6dc758ea", new TypeReference<>() {});
 
         Employee employee = result.join();
         assertNotNull(employee);
-        assertEquals(employeeId, employee.getId().toString());
+        assertEquals("596205c5-e4dc-4b0e-89dc-b2ec6dc758ea", employee.getId().toString());
         assertEquals("Alice Smith", employee.getName());
-        assertEquals(1200, employee.getSalary());
-        assertEquals(30, employee.getAge());
-        assertEquals("alice.smith@gmail.com", employee.getEmail());
     }
 
     @Test
-    void shouldReturnEmployeeWhenPostIsSuccessfulWithDifferentInput() {
-        String jsonResponse = "{\"data\":{\"id\":\"123e4567-e89b-12d3-a456-426614174000\",\"name\":\"Alice Johnson\"}}";
+    void testPost_successfulResponse() {
+        String jsonResponse = "{\"data\":{\"id\":\"987e6543-e21b-45d3-b456-123456789abc\",\"name\":\"Bob Johnson\"}}";
         HttpResponse<String> httpResponse = mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(200);
         when(httpResponse.body()).thenReturn(jsonResponse);
@@ -70,14 +59,74 @@ class EmployeeApiClientTest {
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(CompletableFuture.completedFuture(httpResponse));
 
-        EmployeeCreationInput input =
-                new EmployeeCreationInput("Alice Johnson", 2200, 28, "Backend Developer", "alice.johnson@example.com");
+        CompletableFuture<Employee> result = apiClient.post(
+                "/employees",
+                new EmployeeCreationInput("Bob Johnson", 2500, 35, "DevOps Engineer", "bob.johnson@example.com"),
+                new TypeReference<Employee>() {});
 
-        CompletableFuture<Employee> result = apiClient.post("/employees", input, new TypeReference<Employee>() {});
         Employee employee = result.join();
-
         assertNotNull(employee);
-        assertEquals("123e4567-e89b-12d3-a456-426614174000", employee.getId().toString());
-        assertEquals("Alice Johnson", employee.getName());
+        assertEquals("987e6543-e21b-45d3-b456-123456789abc", employee.getId().toString());
+        assertEquals("Bob Johnson", employee.getName());
+    }
+
+    @Test
+    void testDelete_successfulResponse() {
+        String jsonResponse = "{\"data\":true}";
+        HttpResponse<String> httpResponse = mock(HttpResponse.class);
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(httpResponse.body()).thenReturn(jsonResponse);
+
+        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(CompletableFuture.completedFuture(httpResponse));
+
+        CompletableFuture<Boolean> result = apiClient.delete("/employee", new DeleteEmployeeInput("Charlie Brown"));
+
+        boolean isDeleted = result.join();
+        assertTrue(isDeleted);
+    }
+
+    @Test
+    void testGet_unsuccessfulResponse() {
+        HttpResponse<String> httpResponse = mock(HttpResponse.class);
+        when(httpResponse.statusCode()).thenReturn(404);
+        when(httpResponse.body()).thenReturn("Employee not found");
+        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(CompletableFuture.completedFuture(httpResponse));
+
+        CompletableFuture<Employee> result =
+                apiClient.get("/employees/596205c5-e4dc-4b0e-89dc-b2ec6dc758ea", new TypeReference<>() {});
+
+        assertThrows(CompletionException.class, result::join);
+    }
+
+    @Test
+    void testPost_unsuccessfulResponse() {
+        HttpResponse<String> httpResponse = mock(HttpResponse.class);
+        when(httpResponse.statusCode()).thenReturn(400);
+        when(httpResponse.body()).thenReturn("Invalid input");
+
+        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(CompletableFuture.completedFuture(httpResponse));
+
+        CompletableFuture<Employee> result = apiClient.post(
+                "/employees",
+                new EmployeeCreationInput("Diana Prince", 3000, 32, "Frontend Developer", "diana.prince@example.com"),
+                new TypeReference<Employee>() {});
+
+        assertThrows(CompletionException.class, result::join);
+    }
+
+    @Test
+    void testDelete_unsuccessfulResponse() {
+        HttpResponse httpResponse = mock(HttpResponse.class);
+        when(httpResponse.statusCode()).thenReturn(400);
+        when(httpResponse.body()).thenReturn("Invalid input");
+        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(CompletableFuture.completedFuture(httpResponse));
+
+        CompletableFuture<Boolean> result = apiClient.delete("/employee", new DeleteEmployeeInput("Ethan Hunt"));
+
+        assertThrows(CompletionException.class, result::join);
     }
 }

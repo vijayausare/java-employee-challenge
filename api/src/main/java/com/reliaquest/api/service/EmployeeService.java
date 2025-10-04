@@ -3,10 +3,13 @@ package com.reliaquest.api.service;
 import static com.reliaquest.api.utils.StringUtils.containsString;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.reliaquest.api.controller.request.DeleteEmployeeInput;
 import com.reliaquest.api.controller.request.EmployeeCreationInput;
+import com.reliaquest.api.exception.APIException;
 import com.reliaquest.api.model.Employee;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -65,5 +68,24 @@ public class EmployeeService {
         return employeeApiClient
                 .post("/api/v1/employee", input, employeeTypeReference)
                 .join();
+    }
+
+    public String deleteEmployee(String id) {
+        log.debug("Deleting employee with ID: {}", id);
+        Employee employee = getEmployeeById(id);
+
+        boolean isDeleted = Objects.nonNull(employee)
+                ? employeeApiClient
+                        .delete("/api/v1/employee", new DeleteEmployeeInput(employee.getName()))
+                        .join()
+                : false;
+
+        if (isDeleted) {
+            log.debug("Employee deleted with ID: {}", employee.getId());
+            return employee.getName();
+        } else {
+            log.error("Delete Employee: Employee not found with ID: {}", id);
+            throw new APIException(400, "Employee not found with ID %s".formatted(id));
+        }
     }
 }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.reliaquest.api.controller.request.DeleteEmployeeInput;
 import com.reliaquest.api.controller.request.EmployeeCreationInput;
 import com.reliaquest.api.exception.APIException;
 import com.reliaquest.api.model.Employee;
@@ -140,5 +141,36 @@ class EmployeeServiceTest {
         assertEquals(mockCreatedEmployee.getEmail(), createdEmployee.getEmail());
         assertEquals(mockCreatedEmployee.getTitle(), createdEmployee.getTitle());
         assertEquals(mockCreatedEmployee.getSalary(), createdEmployee.getSalary());
+    }
+
+    @Test
+    void itShouldReturnEmployeeNameIfEmployeeIsDeleted() {
+        Employee mockEmployee =
+                new Employee(UUID.randomUUID(), "Alice", 1200, 30, "QA Engineer", "alice.smith@gmail.com");
+
+        when(employeeApiClient.get(any(), any())).thenReturn(CompletableFuture.completedFuture(mockEmployee));
+        when(employeeApiClient.delete(any(), any())).thenReturn(CompletableFuture.completedFuture(true));
+
+        String deletedEmployeeName =
+                employeeService.deleteEmployee(mockEmployee.getId().toString());
+
+        assertEquals(mockEmployee.getName(), deletedEmployeeName);
+        verify(employeeApiClient, times(1)).get(any(), any());
+        ArgumentCaptor<DeleteEmployeeInput> deleteEmployeeInputArgumentCaptor =
+                ArgumentCaptor.forClass(DeleteEmployeeInput.class);
+        verify(employeeApiClient, times(1))
+                .delete(argumentCaptor.capture(), deleteEmployeeInputArgumentCaptor.capture());
+        assertEquals(EMPLOYEE_SERVER_API_PATH, argumentCaptor.getValue());
+        assertEquals("Alice", deleteEmployeeInputArgumentCaptor.getValue().name());
+    }
+
+    @Test
+    void itShouldThrowExceptionIfEmployeeIsNotDeleted() {
+        when(employeeApiClient.get(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(employeeApiClient.delete(any(), any())).thenReturn(CompletableFuture.completedFuture(false));
+
+        assertThrows(
+                APIException.class, () -> employeeService.deleteEmployee("abcbc123-4567-890a-bcde-fghij123456789"));
+        verify(employeeApiClient, times(0)).delete(any(), any());
     }
 }
