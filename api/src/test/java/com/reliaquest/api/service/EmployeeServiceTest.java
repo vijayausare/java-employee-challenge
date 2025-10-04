@@ -16,15 +16,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 class EmployeeServiceTest {
     private static final String EMPLOYEE_SERVER_API_PATH = "/api/v1/employee";
 
-    @Mock
-    private EmployeeAPIClient employeeApiClient;
+    private final EmployeeAPIClient employeeApiClient = Mockito.mock(EmployeeAPIClient.class);
 
-    @InjectMocks
-    private EmployeeService employeeService;
+    private final EmployeeService employeeService = new EmployeeService(employeeApiClient);
 
     private List<Employee> mockEmployeeList;
 
@@ -58,7 +57,7 @@ class EmployeeServiceTest {
 
     @Test
     void shouldReturnEmployeesWhenNameContainsSearchString() {
-        String searchString = "Al";
+        String searchString = "li";
         when(employeeApiClient.get(any(), any())).thenReturn(CompletableFuture.completedFuture(mockEmployeeList));
 
         List<Employee> receivedEmployees = employeeService.getEmployeesByNameSearch(searchString);
