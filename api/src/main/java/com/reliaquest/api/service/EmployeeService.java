@@ -31,4 +31,11 @@ public class EmployeeService {
                 .filter(e -> containsString(e.getName(), searchString))
                 .toList();
     }
+
+    public Integer getHighestSalaryOfEmployees() {
+        List<Employee> allEmployees = getAllEmployees();
+        log.debug("Get highest salary of employee out of {} employees", allEmployees.size());
+
+        return allEmployees.stream().mapToInt(Employee::getSalary).max().orElse(0);
+    }
 }

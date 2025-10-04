@@ -64,4 +64,15 @@ class EmployeeServiceTest {
         verify(employeeApiClient, times(1)).get(argumentCaptor.capture(), any());
         assertEquals(EMPLOYEE_SERVER_API_PATH, argumentCaptor.getValue());
     }
+
+    @Test
+    void itShouldReturnHighestSalaryOfEmployee() {
+        when(employeeApiClient.get(any(), any())).thenReturn(CompletableFuture.completedFuture(mockEmployeeList));
+
+        Integer highestSalary = employeeService.getHighestSalaryOfEmployees();
+
+        assertEquals(3000, highestSalary);
+        verify(employeeApiClient, times(1)).get(argumentCaptor.capture(), any());
+        assertEquals(EMPLOYEE_SERVER_API_PATH, argumentCaptor.getValue());
+    }
 }
