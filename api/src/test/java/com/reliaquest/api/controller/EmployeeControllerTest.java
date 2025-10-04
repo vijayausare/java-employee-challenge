@@ -39,9 +39,9 @@ class EmployeeControllerTest {
             new Employee(UUID.randomUUID(), "Charlie Brown", 1800, 28, "Backend Developer", "charlie.brown@gmail.com"),
             new Employee(UUID.randomUUID(), "Diana Prince", 3000, 32, "Frontend Developer", "diana.prince@gmail.com"),
             new Employee(UUID.randomUUID(), "Ethan Hunt", 2200, 40, "Security Analyst", "ethan.hunt@gmail.com"),
-            new Employee(UUID.randomUUID(), "Fiona Gallagher", 1500, 26, "Support Engineer", "fiona.gallagher@gmail.com"),
-            new Employee(UUID.randomUUID(), "George Michael", 2700, 33, "Tech Lead", "george.michael@gmail.com")
-    );
+            new Employee(
+                    UUID.randomUUID(), "Fiona Gallagher", 1500, 26, "Support Engineer", "fiona.gallagher@gmail.com"),
+            new Employee(UUID.randomUUID(), "George Michael", 2700, 33, "Tech Lead", "george.michael@gmail.com"));
 
     EmployeeServerMocks employeeServerMocks = new EmployeeServerMocks(employeeServerWireMockRule);
 
@@ -50,9 +50,7 @@ class EmployeeControllerTest {
         employeeServerMocks.mockGetApiCall(
                 "/api/v1/employee", 200, getEnclosedResponse(objectMapper.writeValueAsString(mockEmployeeList)));
 
-        mockMvc.perform(get("/"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(mockEmployeeList.size())));
+        mockMvc.perform(get("/")).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(mockEmployeeList.size())));
     }
 
     @Test
@@ -79,8 +77,7 @@ class EmployeeControllerTest {
         employeeServerMocks.mockGetApiCall(
                 "/api/v1/employee/" + mockEmployee.getId(),
                 200,
-                getEnclosedResponse(objectMapper.writeValueAsString(mockEmployee))
-        );
+                getEnclosedResponse(objectMapper.writeValueAsString(mockEmployee)));
 
         // Mock DELETE call
         String deleteResponse = """
@@ -102,10 +99,7 @@ class EmployeeControllerTest {
         Employee mockEmployee = mockEmployeeList.get(0);
 
         employeeServerMocks.mockGetApiCall(
-                "/api/v1/employee/" + mockEmployee.getId(),
-                200,
-                getEnclosedResponse("null")
-        );
+                "/api/v1/employee/" + mockEmployee.getId(), 200, getEnclosedResponse("null"));
 
         mockMvc.perform(delete("/" + mockEmployee.getId()))
                 .andExpect(status().isBadRequest())
