@@ -60,7 +60,14 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
 
     @Override
     public ResponseEntity<Employee> createEmployee(EmployeeCreationInput employeeInput) {
-        log.info("Creating new employee with input: {}", employeeInput);
+        log.info(
+                "Creating new employee: name={}, title={}, salary={}, age={}, email=[PROTECTED]",
+                employeeInput.name(),
+                employeeInput.title(),
+                employeeInput.salary(),
+                employeeInput.age());
+
+        log.debug("Full employee input details: {}", employeeInput);
         Employee createdEmployee = employeeService.createEmployee(employeeInput);
         log.info("Employee created successfully with ID: {}", createdEmployee.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(createdEmployee);
