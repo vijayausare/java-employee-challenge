@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.reliaquest.api.exception.APIException;
 import com.reliaquest.api.model.Employee;
 import java.util.List;
 import java.util.UUID;
@@ -74,5 +75,28 @@ class EmployeeServiceTest {
         assertEquals(3000, highestSalary);
         verify(employeeApiClient, times(1)).get(argumentCaptor.capture(), any());
         assertEquals(EMPLOYEE_SERVER_API_PATH, argumentCaptor.getValue());
+    }
+
+    @Test
+    void itShouldReturnEmployeeByGivenId() {
+        String id = "123e4567-e89b-12d3-a456-426614174000";
+        Employee mockEmployee =
+                new Employee(UUID.randomUUID(), "Alice Johnson", 1800, 28, "Backend Developer", "alice.johnson@example.com");
+
+        when(employeeApiClient.get(any(), any())).thenReturn(CompletableFuture.completedFuture(mockEmployee));
+
+        Employee receivedEmployee = employeeService.getEmployeeById(id);
+
+        assertEquals(mockEmployee, receivedEmployee);
+        verify(employeeApiClient, times(1)).get(argumentCaptor.capture(), any());
+        assertEquals(EMPLOYEE_SERVER_API_PATH + "/" + id, argumentCaptor.getValue());
+    }
+
+    @Test
+    void itShouldThrowExceptionIfEmployeeNotFound() {
+        String id = "abcbc123-4567-890a-bcde-fghij123456789";
+        when(employeeApiClient.get(any(), any())).thenThrow(new APIException(404, "Employee not found"));
+
+        assertThrows(APIException.class, () -> employeeService.getEmployeeById(id));
     }
 }

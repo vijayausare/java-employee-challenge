@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 public class EmployeeService {
     private final EmployeeAPIClient employeeApiClient;
     private static final TypeReference<List<Employee>> employeeListTypeReference = new TypeReference<>() {};
+    private static final TypeReference<Employee> employeeTypeReference = new TypeReference<>() {};
 
     public EmployeeService(EmployeeAPIClient employeeApiClient) {
         this.employeeApiClient = employeeApiClient;
@@ -37,5 +38,13 @@ public class EmployeeService {
         log.debug("Get highest salary of employee out of {} employees", allEmployees.size());
 
         return allEmployees.stream().mapToInt(Employee::getSalary).max().orElse(0);
+    }
+
+    public Employee getEmployeeById(String id) {
+        log.debug("Getting employee for ID: {}", id);
+
+        return employeeApiClient
+                .get("/api/v1/employee/" + id, employeeTypeReference)
+                .join();
     }
 }
